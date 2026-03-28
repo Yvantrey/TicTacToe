@@ -77,9 +77,77 @@ public class GameController : MonoBehaviour
 
     private int GetBestMove()
     {
-        for (int i = 0; i < 9; i++)
-            if (board[i] == null) return i;
+        float difficulty = GameSettings.difficulty;
+        
+        // Higher difficulty = smarter AI
+        if (Random.value < difficulty)
+        {
+            // Smart move using minimax
+            int bestMove = GetMinimaxMove();
+            if (bestMove != -1) return bestMove;
+        }
+        
+        // Random move (easy mode)
+        return GetRandomMove();
+    }
+
+    private int GetMinimaxMove()
+    {
+        // Try to win
+        int winMove = FindWinningMove("O");
+        if (winMove != -1) return winMove;
+        
+        // Block opponent from winning
+        int blockMove = FindWinningMove("X");
+        if (blockMove != -1) return blockMove;
+        
+        // Take center if available
+        if (board[4] == null) return 4;
+        
+        // Take corners
+        int[] corners = {0, 2, 6, 8};
+        foreach (int corner in corners)
+            if (board[corner] == null) return corner;
+        
+        // Take any available
+        return GetRandomMove();
+    }
+
+    private int FindWinningMove(string player)
+    {
+        int[][] lines = {
+            new int[] {0,1,2}, new int[] {3,4,5}, new int[] {6,7,8},
+            new int[] {0,3,6}, new int[] {1,4,7}, new int[] {2,5,8},
+            new int[] {0,4,8}, new int[] {2,4,6}
+        };
+        
+        foreach (int[] line in lines)
+        {
+            int count = 0;
+            int emptyIndex = -1;
+            
+            for (int i = 0; i < 3; i++)
+            {
+                if (board[line[i]] == player) count++;
+                else if (board[line[i]] == null) emptyIndex = line[i];
+            }
+            
+            if (count == 2 && emptyIndex != -1) return emptyIndex;
+        }
+        
         return -1;
+    }
+
+    private int GetRandomMove()
+    {
+        int[] available = new int[9];
+        int count = 0;
+        
+        for (int i = 0; i < 9; i++)
+            if (board[i] == null) available[count++] = i;
+        
+        if (count == 0) return -1;
+        return available[Random.Range(0, count)];
     }
 
     private bool CheckWin()
